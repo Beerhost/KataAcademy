@@ -1,51 +1,49 @@
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class StringCalculator {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println("Введите выражение:");
         String input = scanner.nextLine();
 
         try {
             String result = calculate(input);
             System.out.println(result);
         } catch (IllegalArgumentException e) {
-            System.out.println(e.getMessage());
+            System.out.println("Ошибка " + e.getMessage());
         }
 
         scanner.close();
     }
 
     private static String calculate(String input) {
-        String[] parts = input.split(" ");
-        if (parts.length != 3) {
-            throw new IllegalArgumentException("Ошибка");
+        Pattern pattern = Pattern.compile("\"([^\"]{1,10})\"\\s*(\\+|-|\\*|/)\\s*(\"[^\"]{1,10}\"|\\d{1,2})");
+        Matcher matcher = pattern.matcher(input);
+
+        if (!matcher.find()) {
+            throw new IllegalArgumentException("1");
         }
 
-        String a = parts[0];
-        String operation = parts[1];
-        String b = parts[2];
+        String a = matcher.group(1);
+        String operation = matcher.group(2);
+        String b = matcher.group(3);
 
-        if (!isValidString(a)) {
-            throw new IllegalArgumentException("Ошибка");
-        }
-
-        a = a.substring(1, a.length() - 1);
 
         int numberB = 0;
         if (isNumber(b)) {
             numberB = parseNumberFromString(b);
         } else if (!isValidString(b)) {
-            throw new IllegalArgumentException("Ошибка");
+            throw new IllegalArgumentException("2");
         } else {
             b = b.substring(1, b.length() - 1);
         }
 
         switch (operation) {
             case "+":
-                return truncate(a + (isNumber(b) ? "" : b));
+                return truncate(a + b);
 
             case "-":
                 return truncate(subtractStrings(a, b));
@@ -57,34 +55,34 @@ public class StringCalculator {
                 return truncate(divideStringByNumber(a, numberB));
 
             default:
-                throw new IllegalArgumentException("Ошибка");
+                throw new IllegalArgumentException("3" + operation);
         }
     }
 
     private static boolean isValidString(String str) {
-        return str.startsWith("\"") && str.endsWith("\"");
+        return str.startsWith("\"") && str.endsWith("\"") && str.length() <= 12; // 12 включает кавычки
     }
 
     private static boolean isNumber(String str) {
         try {
-            Integer.parseInt(str);
-            return true;
+            int number = Integer.parseInt(str.trim());
+            return number >= 1 && number <= 10;
         } catch (NumberFormatException e) {
             return false;
         }
     }
 
     private static int parseNumberFromString(String str) {
-        int number = Integer.parseInt(str);
+        int number = Integer.parseInt(str.trim());
         if (number < 1 || number > 10) {
-            throw new IllegalArgumentException("Ошибка");
+            throw new IllegalArgumentException("4");
         }
         return number;
     }
 
     private static String subtractStrings(String a, String b) {
         if (a.contains(b)) {
-            return a.replaceFirst(b, "");
+            return a.replaceFirst(Pattern.quote(b), "");
         } else {
             return a;
         }
@@ -100,7 +98,7 @@ public class StringCalculator {
 
     private static String divideStringByNumber(String str, int number) {
         if (number <= 0) {
-            throw new IllegalArgumentException("Ошибка");
+            throw new IllegalArgumentException("5");
         }
         int length = str.length() / number;
         return str.substring(0, length);
